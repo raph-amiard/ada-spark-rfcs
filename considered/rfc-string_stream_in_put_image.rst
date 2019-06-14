@@ -12,20 +12,25 @@ and nonportable.
 Motivation
 ==========
 
-AI12-0020-1 introduces support for user defined Image attribute.
+AI12-0020-1 introduces support for user defined Image attributes.
 This is defined in terms of a procedure T'Put_Image, an
-attribute with the specification::
+attribute with the specification
+
+.. code::
 
    procedure T'Put_Image
        (Arg : T; Stream : not null access Ada.Streams.Root_Stream_Type'Class);
 
-User should convert its type to Stream_Element stream. But compiler/run-time
-read then the stream into Wide_Wide_String.
+The user should convert its type to Stream_Element stream. But compiler/run-time
+ then reads the stream into a Wide_Wide_String.
 
 This is error prone, too low level and nonportable.
 
-This is error prone because user is able to write anything into the stream
-instead of Wide_Wide_String and compiler won't find error. For instance::
+This is error prone because the user is able to write anything into the stream
+instead of Wide_Wide_String and the compiler won't be able to report an error
+statically. For instance:
+
+.. code::
 
    procedure Put_Image
      (Arg    : Point;
@@ -43,7 +48,9 @@ Character and Stream_Element_Array instead of String, Wide_String and Wide_Wide_
 This is nonportable because encoding of text differs on platforms. For example,
 if user wants to control string layout it should insert end of line characters
 into the stream. But Windows uses CR/LF for this and others OS uses LF or even
-other bytes for this. So result code is unportabe::
+other bytes for this. So result code is unportable
+
+.. code::
 
    procedure Put_Image
      (Arg    : Point;
@@ -57,7 +64,8 @@ other bytes for this. So result code is unportabe::
 
 Instead new string stream should be defined and used in Put_Image specification.
 
-::
+.. code::
+
    type Output_Text_Stream is limited interface;
 
    not overriding procedure Put
@@ -73,7 +81,9 @@ Instead new string stream should be defined and used in Put_Image specification.
 Guide-level explanation
 =======================
 
-Introduce new package and type for text streams::
+Introduce new package and type for text streams
+
+.. code::
 
    package Ada.Streams.Text_Streams is
       type Output_Text_Stream is limited interface;
@@ -89,7 +99,8 @@ Introduce new package and type for text streams::
 
 Change definition of 'Put_Image to
 
-::
+.. code::
+
    procedure T'Put_Image
     (Value  : T;
      Stream : not null access
@@ -105,7 +116,8 @@ uses correct encoding of characters for given platform.
 Perhaps Input_Text_Stream should be defined to let runtime read
 Output_Text_Stream during conversion to String/Wide_Wtring/Wide_Wide_String.
 
-::
+.. code::
+
    type Input_Text_Stream is limited interface;
 
    not overriding function Get_Line
@@ -115,8 +127,8 @@ Output_Text_Stream during conversion to String/Wide_Wtring/Wide_Wide_String.
    not overriding function End_Of_Stream
     (Self : in out Input_Text_Stream)
       return Boolean is abstract;
-      
-Conversion routine then read lines from Input_Text_Stream using
+
+Conversion routine will then read lines from Input_Text_Stream using
 Get_Line concatinate them with correct end-of-line separator
 until End_Of_Stream.
 
@@ -128,14 +140,14 @@ This way compiler will be able to detect described error in user
 provided Put_Image routines at compile time. User will have
 better understanding how Put_Image should work.
 
-This meat the general philosophy of the languages of safe and
+This meets the general philosophy of the languages of safe and
 secure programming.
 
 Drawbacks
 =========
 
 This could be a little more complicated in implementations then
-original proposal.
+original proposal, but we feel that the added safety is worth it.
 
 
 Prior art
